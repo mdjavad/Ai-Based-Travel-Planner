@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Journey — AI Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight: #060b18;
+      --deep: #0c1628;
+      --navy: #0f2044;
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim: rgba(201,168,76,0.12);
+      --ivory: #f5f0e8;
+      --muted: rgba(245,240,232,0.45);
+      --glass: rgba(15,32,68,0.55);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--midnight);
+      color: var(--ivory);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 3rem;
+      background: linear-gradient(to bottom, rgba(6,11,24,0.98), transparent);
+      border-bottom: 1px solid rgba(201,168,76,0.06);
+    }
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300;
+      letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; text-decoration: none;
+    }
+    .nav-logo span { color: var(--ivory); font-style: italic; }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .btn-back {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      border: 1px solid rgba(201,168,76,0.15); padding: 0.5rem 1.2rem;
+      transition: all 0.3s ease;
+    }
+    .btn-back:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-dim); }
+    .btn-dashboard {
+      font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--gold); border: 1px solid rgba(201,168,76,0.35);
+      padding: 0.5rem 1rem; text-decoration: none; transition: all 0.3s;
+    }
+    .btn-dashboard:hover { background: var(--gold); color: var(--midnight); }
+
+    /* ── MAIN ── */
+    main { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 8rem 2rem 6rem; }
+
+    /* ── HEADER ── */
+    .result-header {
+      text-align: center; margin-bottom: 3.5rem;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s;
+    }
+    .result-eyebrow { font-size: 0.65rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+    .result-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 300; line-height: 1.1; margin-bottom: 1.5rem; }
+    .result-title em { font-style: italic; color: var(--gold-light); }
+    .result-divider { width: 80px; height: 1px; background: linear-gradient(to right, transparent, var(--gold), transparent); margin: 0 auto; }
+
+    /* ── SUMMARY BAR ── */
+    .summary-bar {
+      display: flex; gap: 1px; margin-bottom: 3rem;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+      flex-wrap: wrap;
+    }
+    .summary-item {
+      flex: 1; min-width: 100px;
+      background: var(--glass); backdrop-filter: blur(10px);
+      border: 1px solid rgba(201,168,76,0.12);
+      padding: 1.2rem 1rem; text-align: center;
+    }
+    .summary-label { font-size: 0.58rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem; display: block; }
+    .summary-value { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 400; color: var(--ivory); }
+
+    /* ── RESULT CARD (summary + advice wrapper) ── */
+    .result-body { opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s; }
+    .result-card {
+      background: var(--glass); backdrop-filter: blur(16px);
+      border: 1px solid rgba(201,168,76,0.12); border-radius: 2px;
+      padding: 2.5rem 3rem; position: relative;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    }
+    .result-card::before {
+      content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-light), transparent);
+    }
+
+    /* ── TRIP SUMMARY LINES ── */
+    .itinerary-content { line-height: 1.9; font-size: 0.95rem; color: rgba(245,240,232,0.85); }
+    .itinerary-content p { margin-bottom: 1rem; }
+
+    .info-line {
+      display: flex; align-items: baseline; gap: 0.8rem;
+      padding: 0.6rem 0; border-bottom: 1px solid rgba(201,168,76,0.06);
+    }
+    .info-key { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); min-width: 140px; flex-shrink: 0; }
+    .info-val { color: var(--ivory); font-size: 0.95rem; }
+
+    /* ── DAY CARD — new photo-first design ── */
+    .day-card {
+      margin: 2.5rem 0 0;
+      border: 1px solid rgba(201,168,76,0.14);
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(6,11,24,0.5);
+      transition: border-color 0.3s;
+    }
+    .day-card:hover { border-color: rgba(201,168,76,0.35); }
+
+    /* Photo strip */
+    .day-photo-strip {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+      background: var(--navy);
+    }
+    .day-photo-strip img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+    .day-photo-strip img.loaded { opacity: 1; }
+    .day-card:hover .day-photo-strip img { transform: scale(1.04); }
+
+    /* Gradient overlay on photo */
+    .day-photo-strip::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom,
+        rgba(6,11,24,0.05) 0%,
+        rgba(6,11,24,0.1) 50%,
+        rgba(6,11,24,0.85) 100%
+      );
+    }
+    /* Day label overlaid on photo */
+    .day-photo-label {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1rem 1.5rem;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .day-photo-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem; font-weight: 400;
+      color: var(--ivory);
+      text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+      line-height: 1.2;
+    }
+    .day-photo-title span {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.58rem; letter-spacing: 0.35em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 0.2rem;
+    }
+    .day-photo-credit {
+      font-size: 0.55rem; letter-spacing: 0.1em;
+      color: rgba(245,240,232,0.35);
+      text-align: right;
+    }
+
+    /* Photo skeleton loader */
+    .photo-skeleton {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg,
+        rgba(15,32,68,0.8) 25%,
+        rgba(201,168,76,0.08) 50%,
+        rgba(15,32,68,0.8) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Day content body */
+    .day-body {
+      padding: 1.4rem 1.8rem 1.8rem;
+    }
+    .day-body p { font-size: 0.9rem; line-height: 1.85; color: rgba(245,240,232,0.8); margin-bottom: 0.7rem; }
+    .day-body p:last-child { margin-bottom: 0; }
+
+    /* Photo gallery row — up to 3 extra small thumbnails */
+    .day-thumbs {
+      display: flex; gap: 6px; margin-top: 1rem;
+    }
+    .day-thumb {
+      flex: 1; height: 64px; border-radius: 2px;
+      overflow: hidden; position: relative;
+      background: var(--navy); cursor: pointer;
+    }
+    .day-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      opacity: 0; transition: opacity 0.4s, transform 0.4s;
+    }
+    .day-thumb img.loaded { opacity: 1; }
+    .day-thumb:hover img { transform: scale(1.08); }
+
+    /* ── ADVICE BLOCK ── */
+    .advice-block {
+      margin-top: 2.5rem;
+      padding: 1.5rem 2rem;
+      background: rgba(201,168,76,0.06);
+      border-left: 2px solid var(--gold);
+      border-radius: 0 2px 2px 0;
+    }
+    .advice-block h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--gold-light); margin-bottom: 0.7rem; }
+
+    /* ── ACTIONS ── */
+    .actions {
+      display: flex; gap: 1rem; margin-top: 2.5rem;
+      justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.8s;
+    }
+    .btn-primary {
+      background: transparent; border: 1px solid var(--gold); color: var(--gold);
+      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; letter-spacing: 0.35em;
+      text-transform: uppercase; padding: 0.9rem 2.5rem; cursor: pointer;
+      text-decoration: none; overflow: hidden; position: relative; transition: color 0.3s; display: inline-block;
+    }
+    .btn-primary::before { content: ''; position: absolute; inset: 0; background: var(--gold); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; }
+    .btn-primary:hover::before { transform: scaleX(1); }
+    .btn-primary:hover { color: var(--midnight); }
+    .btn-primary span { position: relative; z-index: 1; }
+    .btn-secondary {
+      background: transparent; border: 1px solid rgba(201,168,76,0.25); color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; letter-spacing: 0.35em;
+      text-transform: uppercase; padding: 0.9rem 2.5rem; cursor: pointer;
+      text-decoration: none; transition: all 0.3s; display: inline-block;
+    }
+    .btn-secondary:hover { color: var(--ivory); border-color: rgba(201,168,76,0.5); }
+
+    /* ═══════════════════════════════
+       CHATBOT
+    ═══════════════════════════════ */
+    .chat-section { margin-top: 4rem; opacity: 0; animation: fadeUp 0.8s ease forwards 1s; }
+    .chat-section-label { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .chat-section-label::before, .chat-section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(201,168,76,0.25)); }
+    .chat-section-label::after { background: linear-gradient(to left, transparent, rgba(201,168,76,0.25)); }
+    .chat-section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+
+    .chat-wrap { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid rgba(201,168,76,0.15); border-radius: 2px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; }
+    .chat-wrap::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(to right, transparent, var(--gold-light), transparent); }
+
+    .chat-header-bar { display: flex; align-items: center; gap: 0.8rem; padding: 1.2rem 1.8rem; border-bottom: 1px solid rgba(201,168,76,0.1); background: rgba(6,11,24,0.4); }
+    .chat-header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.6); animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .chat-header-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 400; letter-spacing: 0.2em; color: var(--gold-light); }
+    .chat-header-sub { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-left: auto; }
+
+    #chat-messages { height: 360px; overflow-y: auto; padding: 1.5rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; scroll-behavior: smooth; }
+    #chat-messages::-webkit-scrollbar { width: 3px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
+
+    .bubble-wrap { display: flex; gap: 0.7rem; align-items: flex-end; }
+    .bubble-wrap.user { flex-direction: row-reverse; }
+    .bubble-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; background: rgba(6,11,24,0.8); color: var(--gold); }
+    .bubble { max-width: 78%; padding: 0.85rem 1.1rem; border-radius: 2px; font-size: 0.9rem; line-height: 1.7; position: relative; }
+    .bubble.user { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); color: var(--gold-light); border-radius: 2px 2px 0 2px; }
+    .bubble.bot { background: rgba(15,32,68,0.7); border: 1px solid rgba(201,168,76,0.1); color: rgba(245,240,232,0.9); border-radius: 2px 2px 2px 0; }
+    .bubble-timestamp { font-size: 0.58rem; color: var(--muted); margin-top: 0.3rem; text-align: right; }
+    .bubble-wrap.bot .bubble-timestamp { text-align: left; }
+
+    .typing-indicator { display: none; align-items: center; gap: 4px; padding: 0.85rem 1.1rem; background: rgba(15,32,68,0.7); border: 1px solid rgba(201,168,76,0.1); border-radius: 2px 2px 2px 0; width: fit-content; }
+    .typing-indicator.visible { display: flex; }
+    .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); opacity: 0.4; animation: typingBounce 1.2s ease infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%,80%,100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
+
+    .update-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); padding: 0.25rem 0.7rem; border-radius: 20px; margin-top: 0.5rem; }
+    .update-badge::before { content: '✦'; font-size: 0.5rem; }
+
+    .chat-input-row { display: flex; gap: 0; border-top: 1px solid rgba(201,168,76,0.12); background: rgba(6,11,24,0.5); }
+    #chat-input { flex: 1; background: transparent; border: none; outline: none; color: var(--ivory); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300; padding: 1.1rem 1.5rem; caret-color: var(--gold); }
+    #chat-input::placeholder { color: rgba(245,240,232,0.2); }
+    #chat-send {
+      background: transparent; border: none; border-left: 1px solid rgba(201,168,76,0.12);
+      color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 0.68rem;
+      letter-spacing: 0.3em; text-transform: uppercase; padding: 0 1.8rem;
+      cursor: pointer; transition: all 0.3s; white-space: nowrap; position: relative; overflow: hidden;
+    }
+    #chat-send::before { content: ''; position: absolute; inset: 0; background: var(--gold); transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
+    #chat-send:hover::before { transform: scaleX(1); }
+    #chat-send:hover { color: var(--midnight); }
+    #chat-send span { position: relative; z-index: 1; }
+    #chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+    #chat-send:disabled::before { display: none; }
+
+    .chat-hints { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.8rem 1.5rem; border-top: 1px solid rgba(201,168,76,0.06); }
+    .hint-chip { font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); border: 1px solid rgba(201,168,76,0.12); padding: 0.3rem 0.8rem; cursor: pointer; transition: all 0.2s; border-radius: 1px; white-space: nowrap; }
+    .hint-chip:hover { color: var(--gold); border-color: rgba(201,168,76,0.35); background: rgba(201,168,76,0.05); }
+
+    /* ── DOWNLOAD OVERLAY ── */
+    .loader-circle { width: 56px; height: 56px; border: 2px solid rgba(201,168,76,0.15); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #download-loader { display: none; position: fixed; inset: 0; background: rgba(6,11,24,0.95); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+    #download-loader p { font-size: 0.7rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); }
+    #download-success { display: none; position: fixed; bottom: 2rem; right: 2rem; background: var(--navy); border: 1px solid var(--gold); padding: 1rem 1.5rem; color: var(--gold); z-index: 9999; border-radius: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 0.75rem; letter-spacing: 0.2em; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ═══════════════════════════════
+       MOBILE
+    ═══════════════════════════════ */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.2rem; }
+      .nav-logo { font-size: 1.1rem; letter-spacing: 0.1em; }
+      .btn-back { font-size: 0.58rem; padding: 0.4rem 0.7rem; letter-spacing: 0.15em; }
+      .btn-dashboard { display: none; }
+
+      main { padding: 5.5rem 0.8rem 4rem; }
+
+      .result-title { font-size: 2rem !important; }
+
+      .summary-bar {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+      }
+      .summary-item { border-radius: 2px !important; padding: 0.9rem 0.6rem; }
+      .summary-item:last-child { grid-column: 1 / -1; }
+      .summary-label { font-size: 0.52rem; }
+      .summary-value { font-size: 0.9rem; }
+
+      .result-card { padding: 1.3rem 1rem; }
+      .info-line { flex-direction: column; gap: 0.15rem; }
+      .info-key { min-width: unset; font-size: 0.58rem; }
+
+      /* Day cards mobile */
+      .day-card { margin: 1.8rem 0 0; }
+      .day-photo-strip { height: 180px; }
+      .day-photo-title { font-size: 1.3rem; }
+      .day-body { padding: 1rem 1.1rem 1.3rem; }
+      .day-body p { font-size: 0.85rem; }
+      .day-thumbs { gap: 4px; }
+      .day-thumb { height: 52px; }
+
+      .actions { flex-direction: column; gap: 0.6rem; }
+      .btn-primary, .btn-secondary { width: 100%; text-align: center; padding: 0.85rem; }
+
+      #chat-messages { height: 260px; padding: 0.9rem 1rem; }
+      .chat-header-bar { padding: 1rem 1.2rem; }
+      .chat-header-sub { display: none; }
+      .bubble { max-width: 90%; font-size: 0.85rem; }
+      #chat-input { font-size: 0.85rem; padding: 0.9rem 1rem; }
+      #chat-send { padding: 0 1rem; font-size: 0.58rem; }
+      .chat-hints { padding: 0.5rem 0.8rem; }
+      .hint-chip { font-size: 0.56rem; padding: 0.25rem 0.5rem; }
+      #download-success { bottom: 1rem; right: 1rem; left: 1rem; text-align: center; }
+    }
+    @media (max-width: 400px) {
+      .summary-bar { grid-template-columns: 1fr; }
+      .summary-item:last-child { grid-column: 1; }
+    }
+
+    button, input, select { -webkit-tap-highlight-color: transparent; }
+
+    /* ── PROFILE BUTTON ── */
+    .profile-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      text-decoration: none; cursor: pointer;
+      border: 1px solid rgba(201,168,76,0.3);
+      padding: 0.3rem 0.7rem 0.3rem 0.35rem;
+      transition: all 0.3s; border-radius: 2px;
+      background: transparent;
+    }
+    .profile-btn:hover { border-color: var(--gold); background: var(--gold-dim); }
+    .profile-initial {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), rgba(201,168,76,0.2));
+      border: 1px solid rgba(201,168,76,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 0.85rem;
+      color: var(--gold-light); flex-shrink: 0;
+    }
+    .profile-name {
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); transition: color 0.3s;
+    }
+    .profile-btn:hover .profile-name { color: var(--gold); }
+    @media (max-width: 480px) { .profile-name { display: none; } }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-logo">AI <span>Travel_Planner</span></a>
+    <div class="nav-right">
+      {% if user.is_authenticated %}
+        <a href="/profile/" class="profile-btn" title="My Profile">
+          <span class="profile-initial">{{ user.first_name|first|upper|default:user.username|first|upper }}</span>
+          <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+        </a>
+        <a href="/dashboard/" class="btn-dashboard">My Trips</a>
+      {% endif %}
+      <a href="/" class="btn-back">← New Trip</a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- HEADER -->
+    <div class="result-header">
+      <p class="result-eyebrow">✦ Your Personalized Itinerary ✦</p>
+      <h1 class="result-title">Your <em>Journey</em> Awaits</h1>
+      <div class="result-divider"></div>
+    </div>
+
+    <!-- SUMMARY BAR -->
+    <div class="summary-bar" id="summary-bar">
+      <div class="summary-item">
+        <span class="summary-label">Destination</span>
+        <span class="summary-value" id="s-dest">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Duration</span>
+        <span class="summary-value" id="s-days">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Travellers</span>
+        <span class="summary-value" id="s-members">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Budget Given</span>
+        <span class="summary-value" id="s-budget">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Est. Cost</span>
+        <span class="summary-value" id="s-cost">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Budget Status</span>
+        <span class="summary-value" id="s-status">—</span>
+      </div>
+    </div>
+
+    <!-- RESULT CARD (summary info + day cards rendered inside) -->
+    <div class="result-body">
+      <div class="result-card">
+        <div class="itinerary-content" id="itinerary-output"></div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+      <a href="/" class="btn-primary"><span>Plan Another Trip →</span></a>
+      {% if trip %}
+     <a href="{% url 'download_trip_pdf' pk=trip.id %}" class="btn-secondary" id="download-pdf-btn" onclick="handleDownload(event, this)"><span>⬇ Download PDF</span></a>
+      {% else %}
+        <button class="btn-secondary" onclick="showLoginPrompt()">⬇ Download PDF</button>
+      {% endif %}
+    </div>
+
+    <!-- ══ CHATBOT ══ -->
+    <div class="chat-section">
+      <div class="chat-section-label">
+        <span class="chat-section-title">✦ AI Travel Assistant ✦</span>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-header-bar">
+          <div class="chat-header-dot"></div>
+          <div class="chat-header-title">Modify · Refine · Explore</div>
+          <div class="chat-header-sub">Ask anything about your itinerary</div>
+        </div>
+        <div id="chat-messages">
+          <div class="bubble-wrap bot">
+            <div class="bubble-avatar">✦</div>
+            <div>
+              <div class="bubble bot">Your itinerary is ready. I can modify any day, suggest alternatives, adjust for budget or group size, add activities, or answer any travel questions. What would you like to change?</div>
+              <div class="bubble-timestamp">AI Assistant</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding: 0 1.8rem 0.5rem; display:flex; gap:0.7rem; align-items:flex-end;">
+          <div class="bubble-avatar" style="opacity:0; pointer-events:none; width:28px; height:28px; flex-shrink:0;">✦</div>
+          <div class="typing-indicator" id="typing-indicator">
+            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="e.g. Add a cultural experience on Day 2…" autocomplete="off"/>
+          <button id="chat-send" onclick="sendMessage()"><span>Send →</span></button>
+        </div>
+        <div class="chat-hints">
+          <span class="hint-chip" onclick="fillHint(this)">Add a beach day</span>
+          <span class="hint-chip" onclick="fillHint(this)">Split costs per person</span>
+          <span class="hint-chip" onclick="fillHint(this)">Add local food stops</span>
+          <span class="hint-chip" onclick="fillHint(this)">Extend by 2 days</span>
+          <span class="hint-chip" onclick="fillHint(this)">Suggest luxury upgrades</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="download-loader"><div class="loader-circle"></div><p>Preparing your PDF…</p></div>
+  <div id="download-success">✦ &nbsp;Itinerary downloaded successfully</div>
+
+  <script>
+    const rawResult = `{{ result|escapejs }}`;
+    const destination = `{{ destination|escapejs }}`;  // passed from view
+    let currentItinerary = rawResult;
+
+    // ── Wikipedia Commons image search — free, no API key, real place photos
+    // Fetches actual images of destinations/landmarks from Wikimedia Commons
+    const wikiImgCache = {};
+
+    async function fetchWikiImage(query, fallbackQuery) {
+      if (wikiImgCache[query]) return wikiImgCache[query];
+      const search = encodeURIComponent(query);
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${search}&prop=pageimages&format=json&pithumbsize=900&origin=*`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const pages = data.query.pages;
+        const page = Object.values(pages)[0];
+        if (page && page.thumbnail && page.thumbnail.source) {
+          wikiImgCache[query] = page.thumbnail.source;
+          return page.thumbnail.source;
+        }
+        // Try a Commons image search if no page thumbnail
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${search}&prop=pageimages&format=json&origin=*&srnamespace=0&srlimit=3`;
+        const res2 = await fetch(searchUrl);
+        const data2 = await res2.json();
+        const results = data2.query?.search || [];
+        for (const r of results) {
+          const r2 = await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(r.title)}&prop=pageimages&format=json&pithumbsize=900&origin=*`);
+          const d2 = await r2.json();
+          const p2 = Object.values(d2.query.pages)[0];
+          if (p2 && p2.thumbnail?.source) {
+            wikiImgCache[query] = p2.thumbnail.source;
+            return p2.thumbnail.source;
+          }
+        }
+      } catch(e) {}
+      // Final fallback: try the broader destination query
+      if (fallbackQuery && fallbackQuery !== query) {
+        return fetchWikiImage(fallbackQuery, null);
+      }
+      return null;
+    }
+
+    // ── SVG gradient placeholder shown while Wikipedia image loads
+    function getPlaceholderSvg(label) {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='900' height='440'>
+        <defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
+          <stop offset='0%' stop-color='#0c1628'/>
+          <stop offset='100%' stop-color='#0f2044'/>
+        </linearGradient></defs>
+        <rect width='900' height='440' fill='url(#g)'/>
+        <text x='450' y='210' text-anchor='middle' font-family='Georgia,serif' font-size='18' fill='rgba(201,168,76,0.5)'>✦</text>
+        <text x='450' y='240' text-anchor='middle' font-family='Georgia,serif' font-size='13' fill='rgba(245,240,232,0.3)'>${label}</text>
+      </svg>`;
+      return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    // ── SVG gradient placeholder for thumbnails (instant, decorative)
+    function getThumbSvg(seed) {
+      const hues = [200, 220, 240, 30, 180, 260];
+      const h1 = hues[seed % hues.length];
+      const h2 = hues[(seed + 2) % hues.length];
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='130'>
+        <defs><linearGradient id='g${seed}' x1='0%' y1='0%' x2='100%' y2='100%'>
+          <stop offset='0%' stop-color='hsl(${h1},40%,18%)'/>
+          <stop offset='100%' stop-color='hsl(${h2},35%,25%)'/>
+        </linearGradient></defs>
+        <rect width='300' height='130' fill='url(#g${seed})'/>
+        <circle cx='150' cy='65' r='18' fill='none' stroke='rgba(201,168,76,0.25)' stroke-width='1'/>
+        <line x1='142' y1='65' x2='158' y2='65' stroke='rgba(201,168,76,0.35)' stroke-width='1'/>
+        <line x1='150' y1='57' x2='150' y2='73' stroke='rgba(201,168,76,0.35)' stroke-width='1'/>
+      </svg>`;
+      return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    // Extract a short keyword from day text (first interesting noun phrase)
+    function extractDayKeyword(dayText) {
+      // Look for place-like words — capitalised nouns, landmarks, activities
+      const match = dayText.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+)*)\b/);
+      return match ? match[1] : destination;
+    }
+
+    // ── Parse & render itinerary into styled HTML with photo cards
+    function parseAndRender(text) {
+      const lines = text.split('\n');
+      const container = document.getElementById('itinerary-output');
+      let html = '';
+      let inAdvice = false;
+      let currentDayLines = [];
+      let currentDayHeading = null;
+      let dayIndex = 0;
+
+      const extract = (key) => {
+        const re = new RegExp(key + '[:\\s]+(.+)', 'i');
+        const m = text.match(re);
+        return m ? m[1].trim() : '—';
+      };
+
+      // Populate summary bar
+      document.getElementById('s-dest').textContent    = extract('Destination');
+      document.getElementById('s-days').textContent    = extract('Trip Duration');
+      document.getElementById('s-members').textContent = extract('Number of Travellers') || extract('Travellers') || extract('Members') || extract('Travel Type');
+      document.getElementById('s-budget').textContent  = extract('Budget Given');
+      document.getElementById('s-cost').textContent    = extract('Estimated Cost');
+      const status = extract('Is Budget Sufficient');
+      const statusEl = document.getElementById('s-status');
+      statusEl.textContent = status;
+      statusEl.style.color = /yes|sufficient|enough/i.test(status) ? '#6fcf97'
+        : /no|insufficient|low/i.test(status) ? '#eb5757' : '';
+
+      const summaryKeys = ['destination','trip duration','number of travellers','travellers','members','budget given','is budget sufficient','estimated cost','travel type'];
+      const isSummaryLine = l => summaryKeys.some(k => l.toLowerCase().startsWith(k));
+
+      function flushDay() {
+        if (!currentDayHeading) return;
+        dayIndex++;
+        const dayText = currentDayLines.join(' ');
+        const keyword = extractDayKeyword(dayText) || destination;
+        const dayLabel = currentDayHeading.replace(/^day\s*\d+[:\-–]?\s*/i, '');
+        // Build specific and broad queries for Wikipedia
+        const wikiQuery   = keyword !== destination ? `${keyword} ${destination}` : destination;
+        const fallbackQuery = destination;
+        const seed = dayIndex * 37 + destination.length;
+        const currentIdx = dayIndex; // capture for async closure
+
+        html += `
+          <div class="day-card" id="day-card-${currentIdx}">
+            <div class="day-photo-strip">
+              <div class="photo-skeleton" id="skel-${currentIdx}"></div>
+              <img
+                src="${getPlaceholderSvg(dayLabel)}"
+                data-wiki="${wikiQuery}"
+                data-fallback="${fallbackQuery}"
+                alt="${currentDayHeading}"
+                id="day-img-${currentIdx}"
+                class="loaded"
+              />
+              <div class="day-photo-label">
+                <div class="day-photo-title">
+                  <span>Day ${currentIdx}</span>
+                  ${dayLabel}
+                </div>
+                <div class="day-photo-credit" id="credit-${currentIdx}">📸 Loading…</div>
+              </div>
+            </div>
+            <div class="day-body">
+              ${currentDayLines.map(l => l.trim() ? `<p>${l.trim()}</p>` : '').join('')}
+              <div class="day-thumbs">
+                ${[0,1,2].map(i => `
+                  <div class="day-thumb">
+                    <img src="${getThumbSvg(seed + i + 1)}" class="loaded" alt=""/>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+
+        currentDayLines = [];
+        currentDayHeading = null;
+      }
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+
+        if (/^day\s+\d+/i.test(trimmed)) {
+          if (inAdvice) { html += `</div>`; inAdvice = false; }
+          flushDay();
+          currentDayHeading = trimmed;
+          return;
+        }
+
+        if (/^budget advice/i.test(trimmed)) {
+          flushDay();
+          if (inAdvice) html += `</div>`;
+          inAdvice = true;
+          html += `<div class="advice-block"><h4>💡 Budget Advice</h4>`;
+          return;
+        }
+
+        if (isSummaryLine(trimmed)) {
+          if (currentDayHeading) { currentDayLines.push(trimmed); return; }
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx > -1) {
+            const k = trimmed.slice(0, colonIdx).trim();
+            const v = trimmed.slice(colonIdx + 1).trim();
+            if (v) { html += `<div class="info-line"><span class="info-key">${k}</span><span class="info-val">${v}</span></div>`; }
+          }
+          return;
+        }
+
+        if (currentDayHeading !== null) {
+          if (trimmed) currentDayLines.push(trimmed);
+          return;
+        }
+
+        if (inAdvice) {
+          if (trimmed) html += `<p>${trimmed}</p>`;
+          return;
+        }
+
+        if (trimmed) html += `<p>${trimmed}</p>`;
+      });
+
+      flushDay();
+      if (inAdvice) html += `</div>`;
+
+      container.innerHTML = html;
+
+      // ── Async Wikipedia image loader — fetch real place photos after render
+      const wikiImgs = container.querySelectorAll('img[data-wiki]');
+      wikiImgs.forEach(async (img) => {
+        const query    = img.dataset.wiki;
+        const fallback = img.dataset.fallback;
+        const creditEl = img.closest('.day-photo-strip')?.querySelector('.day-photo-credit');
+        const skelEl   = img.closest('.day-photo-strip')?.querySelector('.photo-skeleton');
+
+        const src = await fetchWikiImage(query, fallback);
+        if (src) {
+          img.classList.remove('loaded');
+          img.src = src;
+          img.onload = () => {
+            img.classList.add('loaded');
+            if (skelEl) skelEl.style.display = 'none';
+            if (creditEl) creditEl.innerHTML = '📸 Wikipedia Commons';
+          };
+          img.onerror = () => {
+            img.classList.add('loaded'); // keep placeholder visible
+            if (creditEl) creditEl.innerHTML = '📸 Preview';
+          };
+        } else {
+          if (skelEl) skelEl.style.display = 'none';
+          if (creditEl) creditEl.innerHTML = '📸 Preview';
+        }
+      });
+    }
+
+    parseAndRender(rawResult);
+
+    // ── Chat helpers ──
+    function nowTime() { return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
+
+    function appendBubble(role, text, badge = false) {
+      const msgs = document.getElementById('chat-messages');
+      const isUser = role === 'user';
+      const wrap = document.createElement('div');
+      wrap.className = `bubble-wrap ${isUser ? 'user' : 'bot'}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'bubble-avatar';
+      avatar.textContent = isUser ? 'You' : '✦';
+
+      const inner = document.createElement('div');
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${isUser ? 'user' : 'bot'}`;
+      bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+      const ts = document.createElement('div');
+      ts.className = 'bubble-timestamp';
+      ts.textContent = isUser ? nowTime() : 'AI Assistant · ' + nowTime();
+
+      inner.appendChild(bubble);
+      if (badge) {
+        const b = document.createElement('div');
+        b.className = 'update-badge'; b.textContent = 'Itinerary updated';
+        inner.appendChild(b);
+      }
+      inner.appendChild(ts);
+      wrap.appendChild(avatar); wrap.appendChild(inner);
+      msgs.appendChild(wrap);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function containsItinerary(text) { return /day\s+\d+/i.test(text) && text.length > 200; }
+
+    async function sendMessage() {
+      const input   = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send');
+      const typing  = document.getElementById('typing-indicator');
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendBubble('user', message);
+      input.value = ''; sendBtn.disabled = true;
+      typing.classList.add('visible');
+      document.getElementById('chat-messages').scrollTop = 99999;
+
+      try {
+        const res = await fetch("/chat/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": "{{ csrf_token }}" },
+          body: `message=${encodeURIComponent(message)}&itinerary=${encodeURIComponent(currentItinerary)}`
+        });
+        const data = await res.json();
+        const reply = data.reply || "Sorry, couldn't process that. Please try again.";
+        typing.classList.remove('visible');
+
+        if (containsItinerary(reply)) {
+          currentItinerary = reply;
+          parseAndRender(reply);
+          document.querySelector('.result-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          appendBubble('bot', "I've updated your itinerary above. Here's what changed:\n\n" + reply.slice(0, 400) + (reply.length > 400 ? '…' : ''), true);
+        } else {
+          appendBubble('bot', reply);
+        }
+      } catch {
+        typing.classList.remove('visible');
+        appendBubble('bot', "Something went wrong. Please check your connection.");
+      }
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    function showLoginPrompt() {
+      // Shouldn't normally reach here since trip is always saved after login
+      window.location.href = '/login/';
+    }
+
+    function fillHint(el) { document.getElementById('chat-input').value = el.textContent; document.getElementById('chat-input').focus(); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Journeys — AI Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight: #060b18; --deep: #0c1628; --navy: #0f2044;
+      --gold: #c9a84c; --gold-light: #e8c96a; --gold-dim: rgba(201,168,76,0.12);
+      --ivory: #f5f0e8; --muted: rgba(245,240,232,0.45); --glass: rgba(15,32,68,0.6);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--midnight); color: var(--ivory); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+    #stars-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 3rem;
+      background: linear-gradient(to bottom, rgba(6,11,24,0.98), transparent);
+      border-bottom: 1px solid rgba(201,168,76,0.06);
+    }
+    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; text-decoration: none; }
+    .nav-logo span { color: var(--ivory); font-style: italic; }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-user { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+    .nav-user strong { color: var(--gold); font-weight: 400; }
+    .btn-nav {
+      font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      border: 1px solid rgba(201,168,76,0.2); padding: 0.45rem 1rem;
+      transition: all 0.3s; white-space: nowrap;
+    }
+    .btn-nav:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-dim); }
+    .btn-nav.primary { color: var(--gold); border-color: var(--gold); }
+    .btn-nav.primary:hover { background: var(--gold); color: var(--midnight); }
+    .btn-logout { background: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+    /* MAIN */
+    main { position: relative; z-index: 2; max-width: 960px; margin: 0 auto; padding: 6.5rem 2rem 5rem; }
+
+    /* HEADER */
+    .dash-header { margin-bottom: 3rem; animation: fadeUp 0.7s ease forwards; }
+    .dash-eyebrow { font-size: 0.65rem; letter-spacing: 0.45em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+    .dash-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 300; margin-bottom: 0.4rem; }
+    .dash-title em { font-style: italic; color: var(--gold-light); }
+    .dash-sub { color: var(--muted); font-size: 0.88rem; }
+    .gold-line { width: 60px; height: 1px; background: linear-gradient(to right, transparent, var(--gold), transparent); margin: 1.5rem 0; }
+
+    /* STATS ROW */
+    .stats-row { display: flex; gap: 1px; margin-bottom: 3rem; animation: fadeUp 0.7s ease forwards 0.15s; opacity: 0; }
+    .stat-box { flex: 1; background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(201,168,76,0.12); padding: 1.2rem 1.5rem; text-align: center; }
+    .stat-box:first-child { border-radius: 2px 0 0 2px; }
+    .stat-box:last-child { border-radius: 0 2px 2px 0; }
+    .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--gold-light); }
+    .stat-label { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-top: 0.2rem; }
+
+    /* TRIP CARDS GRID */
+    .trips-section { animation: fadeUp 0.7s ease forwards 0.3s; opacity: 0; }
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+    .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; }
+    .section-title em { font-style: italic; color: var(--gold-light); }
+
+    .trips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+
+    .trip-card {
+      background: var(--glass); backdrop-filter: blur(16px);
+      border: 1px solid rgba(201,168,76,0.12); border-radius: 2px;
+      padding: 1.8rem; position: relative; overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+    }
+    .trip-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(to right, transparent, rgba(201,168,76,0.4), transparent);
+    }
+    .trip-card:hover { border-color: rgba(201,168,76,0.35); box-shadow: 0 20px 60px rgba(0,0,0,0.4); transform: translateY(-2px); }
+
+    .trip-badge {
+      display: inline-block; font-size: 0.58rem; letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--gold);
+      border: 1px solid rgba(201,168,76,0.3); padding: 0.25rem 0.6rem;
+      border-radius: 1px; margin-bottom: 1rem;
+    }
+    .trip-dest { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; margin-bottom: 0.3rem; color: var(--ivory); }
+    .trip-meta { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 1.2rem; }
+    .trip-meta span { color: rgba(201,168,76,0.7); }
+
+    .trip-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.4rem; }
+    .trip-tag { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.1); padding: 0.25rem 0.6rem; border-radius: 1px; }
+
+    .trip-actions { display: flex; gap: 0.6rem; }
+    .trip-btn {
+      font-size: 0.62rem; letter-spacing: 0.25em; text-transform: uppercase;
+      padding: 0.5rem 0.9rem; border: 1px solid rgba(201,168,76,0.2);
+      color: var(--muted); text-decoration: none; background: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.25s;
+    }
+    .trip-btn:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-dim); }
+    .trip-btn.danger:hover { color: #eb5757; border-color: #eb5757; background: rgba(235,87,87,0.08); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center; padding: 5rem 2rem;
+      border: 1px dashed rgba(201,168,76,0.2); border-radius: 2px;
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .empty-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; margin-bottom: 0.5rem; }
+    .empty-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+    .btn-plan-now {
+      display: inline-block; font-size: 0.72rem; letter-spacing: 0.35em; text-transform: uppercase;
+      color: var(--gold); border: 1px solid var(--gold); padding: 0.9rem 2rem; text-decoration: none;
+      transition: background 0.3s, color 0.3s;
+    }
+    .btn-plan-now:hover { background: var(--gold); color: var(--midnight); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.2rem; }
+      .nav-user { display: none; }
+      main { padding: 5.5rem 1.2rem 4rem; }
+      .stats-row { flex-wrap: wrap; }
+      .stat-box { min-width: calc(50% - 1px); }
+      .trips-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      .stat-box { min-width: 100%; border-radius: 2px !important; margin-bottom: 1px; }
+    }
+
+    /* ── PROFILE BUTTON ── */
+    .profile-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      text-decoration: none; cursor: pointer;
+      border: 1px solid rgba(201,168,76,0.3);
+      padding: 0.3rem 0.7rem 0.3rem 0.35rem;
+      transition: all 0.3s; border-radius: 2px;
+    }
+    .profile-btn:hover { border-color: var(--gold); background: var(--gold-dim); }
+    .profile-initial {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), rgba(201,168,76,0.2));
+      border: 1px solid rgba(201,168,76,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 0.85rem;
+      color: var(--gold-light); flex-shrink: 0;
+    }
+    .profile-name {
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); transition: color 0.3s;
+    }
+    .profile-btn:hover .profile-name { color: var(--gold); }
+    @media (max-width: 480px) { .profile-name { display: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="stars-canvas"></canvas>
+
+  <nav>
+    <a href="/" class="nav-logo">AI <span>Travel_Planner</span></a>
+    <div class="nav-right">
+      <div class="nav-user">Welcome, <strong>{{ user.first_name|default:user.username }}</strong></div>
+      <a href="/profile/" class="profile-btn" title="My Profile">
+        <span class="profile-initial">{{ user.first_name|first|upper|default:user.username|first|upper }}</span>
+        <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+      </a>
+      <a href="/" class="btn-nav primary">+ New Trip</a>
+      <form method="POST" action="/logout/" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-nav btn-logout">Sign Out</button>
+      </form>
+    </div>
+  </nav>
+
+  <main>
+    <!-- HEADER -->
+    <div class="dash-header">
+      <p class="dash-eyebrow">✦ Your Travel Archive ✦</p>
+      <h1 class="dash-title">My <em>Journeys</em></h1>
+      <p class="dash-sub">Every itinerary you've crafted, saved for whenever you need them.</p>
+      <div class="gold-line"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num">{{ trips.count }}</div>
+        <div class="stat-label">Trips Planned</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ total_days }}</div>
+        <div class="stat-label">Total Days</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ unique_destinations }}</div>
+        <div class="stat-label">Destinations</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ this_month }}</div>
+        <div class="stat-label">This Month</div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div class="trips-section">
+      <div class="section-head">
+        <h2 class="section-title">Recent <em>Itineraries</em></h2>
+      </div>
+
+      {% if trips %}
+        <div class="trips-grid">
+          {% for trip in trips %}
+          <div class="trip-card">
+            <div class="trip-badge">{{ trip.travel_type }}</div>
+            <div class="trip-dest">{{ trip.destination }}</div>
+            <div class="trip-meta">
+              <span>{{ trip.days }} days</span> &nbsp;·&nbsp;
+              ₹{{ trip.budget|floatformat:0 }} budget &nbsp;·&nbsp;
+              {{ trip.created_at|date:"d M Y" }}
+            </div>
+            <div class="trip-tags">
+              {% if trip.is_budget_sufficient %}
+                <span class="trip-tag" style="color:#6fcf97; border-color: rgba(111,207,151,0.2);">✓ Budget OK</span>
+              {% else %}
+                <span class="trip-tag" style="color:#eb5757; border-color: rgba(235,87,87,0.2);">⚠ Over Budget</span>
+              {% endif %}
+              <span class="trip-tag">{{ trip.days }}D Plan</span>
+            </div>
+            <div class="trip-actions">
+              <a href="/trip/{{ trip.id }}/" class="trip-btn">View →</a>
+              <a href="/trip/{{ trip.id }}/download/" class="trip-btn">PDF</a>
+              <form method="POST" action="/trip/{{ trip.id }}/delete/" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="trip-btn danger" onclick="return confirm('Delete this trip?')">Delete</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🗺️</div>
+          <h3 class="empty-title">No journeys yet</h3>
+          <p class="empty-sub">Your travel plans will appear here once you create your first itinerary.</p>
+          <a href="/" class="btn-plan-now">Plan Your First Trip →</a>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    function initStars() {
+      stars = Array.from({ length: 130 }, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        r: Math.random() * 1.2, o: Math.random() * 0.7 + 0.1, twinkle: Math.random() * Math.PI * 2
+      }));
+    }
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.twinkle += 0.012;
+        const opacity = s.o * (0.5 + 0.5 * Math.sin(s.twinkle));
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201,168,76,${opacity * 0.6})`; ctx.fill();
+        if (s.r > 0.9) {
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 0.4, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(245,240,232,${opacity})`; ctx.fill();
+        }
+      });
+      requestAnimationFrame(drawStars);
+    }
+    window.addEventListener('resize', () => { resize(); initStars(); });
+    resize(); initStars(); drawStars();
+  </script>
+</body>
+</html>

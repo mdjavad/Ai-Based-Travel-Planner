@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 10.5pt;
+    color: #1c1c1c;
+    background: #ffffff;
+    line-height: 1.7;
+  }
+
+  /* ─── COVER PAGE ─────────────────────────────────── */
+  .cover {
+    padding: 80px 64px;
+    page-break-after: always;
+    border-left: 5px solid #1c1c1c;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cover-brand {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 60px;
+  }
+
+  .cover-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 12px;
+  }
+
+  .cover-title {
+    font-size: 52pt;
+    font-weight: normal;
+    color: #1c1c1c;
+    line-height: 1.0;
+    margin-bottom: 8px;
+  }
+
+  .cover-title-italic {
+    font-size: 52pt;
+    font-weight: normal;
+    font-style: italic;
+    color: #555;
+    line-height: 1.0;
+    margin-bottom: 40px;
+  }
+
+  .cover-rule {
+    width: 48px;
+    height: 2px;
+    background: #1c1c1c;
+    margin-bottom: 32px;
+  }
+
+  .cover-destination {
+    font-size: 18pt;
+    font-weight: normal;
+    color: #1c1c1c;
+    margin-bottom: 6px;
+  }
+
+  .cover-route-sub {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    letter-spacing: 0.25em;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .cover-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid #e0e0e0;
+  }
+  .cover-meta-table tr {
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .cover-meta-table td {
+    padding: 10px 0;
+    vertical-align: top;
+  }
+  .cmt-key {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #999;
+    width: 30%;
+  }
+  .cmt-val {
+    font-size: 10.5pt;
+    color: #1c1c1c;
+  }
+
+  .cover-footer {
+    margin-top: auto;
+    padding-top: 40px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #ccc;
+  }
+
+  /* ─── CONTENT PAGES ──────────────────────────────── */
+  .content {
+    padding: 52px 64px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #1c1c1c;
+    padding-bottom: 10px;
+    margin-bottom: 36px;
+  }
+  .ph-brand {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #1c1c1c;
+  }
+  .ph-dest {
+    font-size: 8pt;
+    color: #888;
+    font-style: italic;
+  }
+
+  /* Overview table */
+  .overview-section {
+    margin-bottom: 36px;
+  }
+  .section-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 14px;
+  }
+  .overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid #e0e0e0;
+  }
+  .overview-table tr { border-bottom: 1px solid #f0f0f0; }
+  .overview-table td { padding: 8px 0; vertical-align: top; }
+  .ov-key {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #aaa;
+    width: 35%;
+  }
+  .ov-val { font-size: 9.5pt; color: #1c1c1c; }
+  .budget-ok  { color: #2a7a4b; font-family: Arial, sans-serif; font-size: 9pt; }
+  .budget-nok { color: #c0392b; font-family: Arial, sans-serif; font-size: 9pt; }
+
+  /* Day sections */
+  .itinerary-section { margin-bottom: 36px; }
+
+  .section-title {
+    font-size: 22pt;
+    font-weight: normal;
+    color: #1c1c1c;
+    border-bottom: 1px solid #1c1c1c;
+    padding-bottom: 8px;
+    margin-bottom: 24px;
+  }
+  .section-title-em { font-style: italic; color: #555; }
+
+  .day-block {
+    margin-bottom: 28px;
+    page-break-inside: avoid;
+  }
+  .day-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  .day-heading {
+    font-size: 13pt;
+    font-weight: normal;
+    color: #1c1c1c;
+    margin-bottom: 10px;
+    border-left: 2px solid #1c1c1c;
+    padding-left: 10px;
+  }
+  .day-body {
+    font-size: 9.5pt;
+    line-height: 1.8;
+    color: #333;
+    padding-left: 12px;
+  }
+  .day-body p { margin-bottom: 5px; }
+
+  /* Budget advice */
+  .advice-block {
+    margin-top: 28px;
+    padding: 18px 20px;
+    border: 1px solid #ddd;
+    border-left: 3px solid #1c1c1c;
+    page-break-inside: avoid;
+  }
+  .advice-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  .advice-body { font-size: 9.5pt; line-height: 1.8; color: #333; }
+  .advice-body p { margin-bottom: 5px; }
+
+  /* Footer */
+  .pdf-footer {
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-brand {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6pt;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #ccc;
+  }
+  .footer-note {
+    font-size: 7.5pt;
+    color: #bbb;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER PAGE ═══════════ -->
+<div class="cover">
+  <div class="cover-brand">AI Travel Planner &mdash; Bespoke Itinerary</div>
+
+  <div>
+    <div class="cover-label">Your journey</div>
+    <div class="cover-title">Travel</div>
+    <div class="cover-title-italic">Itinerary</div>
+    <div class="cover-rule"></div>
+
+    {% if origin %}
+      <div class="cover-destination">{{ origin }} &rarr; {{ destination }}</div>
+      <div class="cover-route-sub">Personalised Route Plan</div>
+    {% else %}
+      <div class="cover-destination">{{ destination }}</div>
+      <div class="cover-route-sub">Personalised Travel Plan</div>
+    {% endif %}
+
+    <table class="cover-meta-table">
+      {% if origin %}
+      <tr>
+        <td class="cmt-key">Route</td>
+        <td class="cmt-val">{{ origin }} &rarr; {{ destination }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td class="cmt-key">Destination</td>
+        <td class="cmt-val">{{ destination }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td class="cmt-key">Duration</td>
+        <td class="cmt-val">{{ trip_days }} days</td>
+      </tr>
+      <tr>
+        <td class="cmt-key">Travellers</td>
+        <td class="cmt-val">{{ trip_members }} &middot; {{ trip_travel_type }}</td>
+      </tr>
+      <tr>
+        <td class="cmt-key">Budget</td>
+        <td class="cmt-val">&#8377;{{ trip_budget }}</td>
+      </tr>
+      <tr>
+        <td class="cmt-key">Budget Status</td>
+        <td class="cmt-val">
+          {% if is_budget_sufficient %}
+            <span class="budget-ok">Sufficient</span>
+          {% else %}
+            <span class="budget-nok">May be tight &mdash; see advice</span>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="cover-footer">Generated by AI Travel Planner &nbsp;&middot;&nbsp; Safe Travels</div>
+</div>
+
+<!-- ═══════════ ITINERARY CONTENT ═══════════ -->
+<div class="content">
+
+  <div class="page-header">
+    <div class="ph-brand">AI Travel Planner</div>
+    <div class="ph-dest">
+      {% if origin %}{{ origin }} &rarr; {% endif %}{{ destination }}
+    </div>
+  </div>
+
+  <!-- Overview -->
+  {% if overview_lines %}
+  <div class="overview-section">
+    <div class="section-label">Trip Overview</div>
+    <table class="overview-table">
+      {% for item in overview_lines %}
+      <tr>
+        <td class="ov-key">{{ item.key }}</td>
+        <td class="ov-val">{{ item.value }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Day-by-day -->
+  {% if day_blocks %}
+  <div class="itinerary-section">
+    <div class="section-title">Day-by-Day <span class="section-title-em">Plan</span></div>
+    {% for day in day_blocks %}
+    <div class="day-block">
+      <div class="day-label">Day {{ forloop.counter }}</div>
+      <div class="day-heading">{{ day.heading }}</div>
+      <div class="day-body">
+        {% for line in day.lines %}
+          {% if line %}<p>{{ line }}</p>{% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Budget Advice -->
+  {% if advice_lines %}
+  <div class="advice-block">
+    <div class="advice-label">Budget Advice</div>
+    <div class="advice-body">
+      {% for line in advice_lines %}
+        {% if line %}<p>{{ line }}</p>{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="pdf-footer">
+    <div class="footer-brand">AI Travel Planner</div>
+    <div class="footer-note">Safe travels &mdash; enjoy every moment.</div>
+  </div>
+
+</div>
+</body>
+</html>

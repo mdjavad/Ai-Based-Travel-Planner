@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile — AI Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight:#060b18;--deep:#0c1628;--navy:#0f2044;
+      --gold:#c9a84c;--gold-light:#e8c96a;--gold-dim:rgba(201,168,76,0.12);
+      --ivory:#f5f0e8;--muted:rgba(245,240,232,0.45);--glass:rgba(15,32,68,0.6);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--midnight);color:var(--ivory);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4}
+    #stars-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 3rem;background:linear-gradient(to bottom,rgba(6,11,24,0.98),transparent);border-bottom:1px solid rgba(201,168,76,0.06)}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;text-decoration:none}
+    .nav-logo span{color:var(--ivory);font-style:italic}
+    .nav-right{display:flex;align-items:center;gap:1rem}
+    .btn-nav{font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid rgba(201,168,76,0.2);padding:0.45rem 1rem;transition:all 0.3s;white-space:nowrap;background:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .btn-nav:hover{color:var(--gold);border-color:var(--gold);background:var(--gold-dim)}
+    .btn-nav.primary{color:var(--gold);border-color:var(--gold)}
+    .btn-nav.primary:hover{background:var(--gold);color:var(--midnight)}
+
+    main{position:relative;z-index:2;max-width:820px;margin:0 auto;padding:6.5rem 2rem 5rem}
+
+    .page-header{margin-bottom:2.5rem;animation:fadeUp 0.7s ease forwards}
+    .page-eyebrow{font-size:0.65rem;letter-spacing:0.45em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem}
+    .page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3rem);font-weight:300;margin-bottom:0.3rem}
+    .page-title em{font-style:italic;color:var(--gold-light)}
+    .gold-line{width:50px;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);margin:1.2rem 0}
+
+    /* Avatar circle */
+    .avatar-section{display:flex;align-items:center;gap:1.5rem;margin-bottom:2.5rem;animation:fadeUp 0.7s ease forwards 0.1s;opacity:0}
+    .avatar-circle{width:72px;height:72px;border-radius:50%;border:1px solid rgba(201,168,76,0.4);background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:var(--gold-light);flex-shrink:0;box-shadow:0 0 24px rgba(201,168,76,0.12)}
+
+    .avatar-name{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:var(--ivory)}
+    .avatar-username{font-size:0.72rem;letter-spacing:0.2em;color:var(--muted);margin-top:0.2rem}
+    .avatar-since{font-size:0.68rem;letter-spacing:0.15em;color:rgba(201,168,76,0.6);margin-top:0.1rem}
+
+    /* Stats */
+    .stats-row{display:flex;gap:1px;margin-bottom:2.5rem;animation:fadeUp 0.7s ease forwards 0.2s;opacity:0}
+    .stat-box{flex:1;background:var(--glass);backdrop-filter:blur(10px);border:1px solid rgba(201,168,76,0.12);padding:1rem 1.2rem;text-align:center}
+    .stat-num{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:var(--gold-light)}
+    .stat-label{font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem}
+
+    /* Cards */
+    .profile-card{background:var(--glass);backdrop-filter:blur(16px);border:1px solid rgba(201,168,76,0.12);border-radius:2px;padding:2rem 2.2rem;position:relative;margin-bottom:1.5rem;animation:fadeUp 0.7s ease forwards 0.3s;opacity:0}
+    .profile-card::before{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;background:linear-gradient(to right,transparent,var(--gold-light),transparent)}
+    .card-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:300;color:var(--gold-light);margin-bottom:1.5rem;letter-spacing:0.1em}
+
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .form-group{display:flex;flex-direction:column;gap:0.4rem}
+    .form-group.full{grid-column:1/-1}
+    label.field-label{font-size:0.62rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--gold)}
+    .field-val{font-size:0.9rem;color:rgba(245,240,232,0.7);letter-spacing:0.02em}
+    input[type=text],input[type=email],input[type=password]{width:100%;background:rgba(6,11,24,0.7);border:1px solid rgba(201,168,76,0.2);border-radius:2px;color:var(--ivory);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:300;padding:0.75rem 0.9rem;outline:none;transition:border-color 0.3s,box-shadow 0.3s;-webkit-appearance:none;appearance:none}
+    input::placeholder{color:rgba(245,240,232,0.2)}
+    input:focus{border-color:var(--gold);background:rgba(201,168,76,0.05);box-shadow:0 0 0 3px rgba(201,168,76,0.08)}
+    .input-wrap{position:relative}
+    .toggle-pw{position:absolute;right:0.9rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.7rem;transition:color 0.2s;padding:0}
+    .toggle-pw:hover{color:var(--gold)}
+
+    .msg{padding:0.7rem 1rem;border-radius:2px;font-size:0.82rem;margin-bottom:1.2rem}
+    .msg.error{background:rgba(235,87,87,0.12);border:1px solid rgba(235,87,87,0.3);color:#eb9090}
+    .msg.success{background:rgba(111,207,151,0.1);border:1px solid rgba(111,207,151,0.25);color:#6fcf97}
+
+    .btn-save{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:400;letter-spacing:0.35em;text-transform:uppercase;padding:0.75rem 2rem;cursor:pointer;transition:background 0.3s,color 0.3s;margin-top:0.5rem;position:relative;overflow:hidden}
+    .btn-save::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform 0.3s ease}
+    .btn-save:hover::before{transform:scaleX(1)}
+    .btn-save:hover{color:var(--midnight)}
+    .btn-save span{position:relative;z-index:1}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:768px){nav{padding:1rem 1.2rem}main{padding:5.5rem 1.2rem 4rem}.stats-row{flex-wrap:wrap}.stat-box{min-width:calc(50% - 1px)}.field-row{grid-template-columns:1fr}.profile-card{padding:1.5rem 1.2rem}}
+    @media(max-width:420px){.stat-box{min-width:100%}}
+  </style>
+</head>
+<body>
+  <canvas id="stars-canvas"></canvas>
+
+  <nav>
+    <a href="/" class="nav-logo">AI <span>Travel_Planner</span></a>
+    <div class="nav-right">
+      <a href="/" class="btn-nav primary">+ New Trip</a>
+      <a href="/dashboard/" class="btn-nav">My Trips</a>
+      <form method="POST" action="/logout/" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-nav">Sign Out</button>
+      </form>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <p class="page-eyebrow">✦ Account ✦</p>
+      <h1 class="page-title">My <em>Profile</em></h1>
+      <div class="gold-line"></div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="avatar-section">
+      <div class="avatar-circle">{{ user.first_name|first|upper|default:user.username|first|upper }}</div>
+      <div class="avatar-info">
+        <div class="avatar-name">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="avatar-username">@{{ user.username }}</div>
+        <div class="avatar-since">Member since {{ user.date_joined|date:"F Y" }}</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num">{{ trips.count }}</div>
+        <div class="stat-label">Trips</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ total_days }}</div>
+        <div class="stat-label">Total Days</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ unique_destinations }}</div>
+        <div class="stat-label">Destinations</div>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="msg {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Account Info (read-only) -->
+    <div class="profile-card">
+      <div class="card-title">Account Information</div>
+      <div class="field-row">
+        <div class="form-group">
+          <label class="field-label">Username</label>
+          <div class="field-val">{{ user.username }}</div>
+        </div>
+        <div class="form-group">
+          <label class="field-label">Email</label>
+          <div class="field-val">{{ user.email }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Name -->
+    <div class="profile-card" style="animation-delay:0.35s">
+      <div class="card-title">Update Name</div>
+      <form method="POST" action="/profile/">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_name"/>
+        <div class="field-row">
+          <div class="form-group">
+            <label class="field-label" for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}" placeholder="First name"/>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}" placeholder="Last name"/>
+          </div>
+        </div>
+        <button type="submit" class="btn-save"><span>Save Changes →</span></button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="profile-card" style="animation-delay:0.4s">
+      <div class="card-title">Change Password</div>
+      <form method="POST" action="/profile/">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="change_password"/>
+        <div class="form-group full" style="margin-bottom:1rem">
+          <label class="field-label" for="old_password">Current Password</label>
+          <div class="input-wrap">
+            <input type="password" id="old_password" name="old_password" placeholder="••••••••" autocomplete="current-password"/>
+            <button type="button" class="toggle-pw" onclick="togglePw('old_password',this)">Show</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="form-group">
+            <label class="field-label" for="new_password1">New Password</label>
+            <div class="input-wrap">
+              <input type="password" id="new_password1" name="new_password1" placeholder="••••••••" autocomplete="new-password"/>
+              <button type="button" class="toggle-pw" onclick="togglePw('new_password1',this)">Show</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="new_password2">Confirm Password</label>
+            <div class="input-wrap">
+              <input type="password" id="new_password2" name="new_password2" placeholder="••••••••" autocomplete="new-password"/>
+              <button type="button" class="toggle-pw" onclick="togglePw('new_password2',this)">Show</button>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn-save" style="margin-top:1rem"><span>Update Password →</span></button>
+      </form>
+    </div>
+
+  </main>
+
+  <script>
+    function togglePw(id,btn){const i=document.getElementById(id);if(i.type==='password'){i.type='text';btn.textContent='Hide'}else{i.type='password';btn.textContent='Show'}}
+    const canvas=document.getElementById('stars-canvas');const ctx=canvas.getContext('2d');let stars=[];
+    function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+    function initStars(){stars=Array.from({length:120},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.2,o:Math.random()*0.7+0.1,twinkle:Math.random()*Math.PI*2}))}
+    function drawStars(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.twinkle+=0.012;const o=s.o*(0.5+0.5*Math.sin(s.twinkle));ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(201,168,76,${o*0.6})`;ctx.fill();if(s.r>0.9){ctx.beginPath();ctx.arc(s.x,s.y,s.r*0.4,0,Math.PI*2);ctx.fillStyle=`rgba(245,240,232,${o})`;ctx.fill()}});requestAnimationFrame(drawStars)}
+    window.addEventListener('resize',()=>{resize();initStars()});resize();initStars();drawStars();
+  </script>
+</body>
+</html>
